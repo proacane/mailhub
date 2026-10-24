@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.devdata/
+.npm-cache/
+.npm-tmp/
+.electron-cache/
+*.log
+
+# 测试产物：截图、临时数据目录、解包/安装的临时副本
+.qa-shots/
+.qa-data*/
+.qa-installer/
+.qa-tmp-*/
+
+# 本地数据（真实邮箱数据永远不进仓库）
+data/
+*.sqlite
+*.sqlite-journal

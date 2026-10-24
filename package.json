@@ -1,0 +1,67 @@
+{
+  "name": "mailhub",
+  "productName": "MailHub",
+  "version": "0.2.2",
+  "private": true,
+  "description": "多邮箱统一管理桌面客户端：聚合收件箱、真实 IMAP 收信、SMTP 发信",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node scripts/make-icons.mjs && node scripts/make-ico.mjs",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "author": "MailHub",
+  "license": "MIT",
+  "dependencies": {
+    "imapflow": "^2.5.8",
+    "mailparser": "^3.10.0",
+    "nodemailer": "^10.1.7"
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.mailhub.desktop",
+    "productName": "MailHub",
+    "copyright": "Copyright © 2026 MailHub",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main/**/*",
+      "preload/**/*",
+      "renderer/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "MailHub-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MailHub 邮箱管家",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "include": "build/installer.nsh"
+    }
+  }
+}

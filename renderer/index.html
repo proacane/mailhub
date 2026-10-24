@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'none'; object-src 'none'; frame-src 'self' about:"
+    />
+    <title>MailHub 邮箱管家</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- 自绘标题栏：左侧品牌与侧栏对齐，其余整条可拖动窗口 -->
+    <div class="titlebar" id="titlebar">
+      <div class="titlebar-brand">
+        <div class="brand-mark">M</div>
+        <strong>MailHub</strong>
+      </div>
+      <div class="titlebar-view" id="titlebar-view">统一收件箱</div>
+      <div class="titlebar-actions">
+        <button id="btn-titlebar-compose" class="icon-btn" title="写邮件（Ctrl+N）">＋</button>
+        <button id="btn-settings" class="icon-btn" title="设置">⚙</button>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- 分拣格：竖排账户标签，颜色即身份 -->
+      <nav class="rail">
+        <button class="rail-tab rail-all" id="nav-all" data-view="all" title="统一收件箱">
+          <span class="rail-glyph">◎</span>
+          <span class="badge" id="badge-all" hidden>0</span>
+        </button>
+        <div class="rail-rule"></div>
+        <div id="account-list" class="rail-accounts"></div>
+        <div class="rail-foot">
+          <button id="btn-compose" class="rail-compose" title="写邮件（Ctrl+N）">＋</button>
+          <button id="btn-sync-all" class="rail-btn" title="立即同步"><span class="spin-icon">⟳</span></button>
+          <button id="btn-add-account" class="rail-btn" title="添加邮箱">＋</button>
+        </div>
+      </nav>
+
+      <!-- 台账：当前范围的文件夹清单 -->
+      <aside class="sidebar">
+        <header class="panel-head">
+          <h2 id="panel-title">统一收件箱</h2>
+          <p id="panel-sub"></p>
+          <button class="panel-edit" id="btn-edit-account" hidden>编辑</button>
+        </header>
+        <div id="panel-body" class="panel-body"></div>
+        <footer class="panel-foot">
+          <div class="sync-hint" id="sync-hint"></div>
+        </footer>
+      </aside>
+
+      <main class="main">
+        <header class="list-header">
+          <div class="list-bar">
+            <h3 id="list-scope">收件箱</h3>
+            <span id="list-count">0 封邮件</span>
+            <span id="list-progress"></span>
+            <span class="spacer"></span>
+            <button class="icon-btn" id="btn-mark-all-read" title="把当前文件夹全部标为已读" hidden>✓</button>
+            <button class="icon-btn" id="btn-refresh" title="刷新当前账号">⟳</button>
+          </div>
+
+          <div class="search-row">
+            <span class="search-icon">⌕</span>
+            <input id="search-input" type="search" placeholder="搜索发件人、主题或内容…" autocomplete="off" />
+          </div>
+
+          <div class="chip-row" id="filter-chips">
+            <button class="chip active" data-filter="all">全部</button>
+            <button class="chip" data-filter="unread">未读</button>
+            <button class="chip" data-filter="flagged">星标</button>
+            <button class="chip" data-filter="attachment">有附件</button>
+          </div>
+        </header>
+
+        <div class="panes">
+          <section class="list-pane">
+            <div id="message-list" class="message-list"></div>
+            <div id="list-empty" class="empty-state" hidden></div>
+          </section>
+          <section class="reading-pane" id="reading-pane"></section>
+        </div>
+      </main>
+    </div>
+
+    <!-- 账号弹窗 -->
+    <div class="modal-backdrop" id="account-modal" hidden>
+      <div class="modal modal-account">
+        <header class="modal-head">
+          <h3 id="account-modal-title">添加邮箱账号</h3>
+          <button class="icon-btn" data-close="account-modal">✕</button>
+        </header>
+        <div class="modal-body">
+          <div class="field-grid">
+            <label class="field">
+              <span>邮箱地址</span>
+              <input id="acct-email" type="email" placeholder="name@example.com" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>显示名称</span>
+              <input id="acct-label" type="text" placeholder="例如：工作邮箱" autocomplete="off" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>服务商</span>
+            <select id="acct-provider"></select>
+          </label>
+
+          <div class="hint-box" id="acct-hint"></div>
+
+          <label class="field">
+            <span id="acct-password-label">授权码 / 密码</span>
+            <input id="acct-password" type="password" placeholder="QQ/163 填授权码，Gmail 填应用专用密码" autocomplete="new-password" />
+          </label>
+
+          <details class="advanced" id="acct-advanced">
+            <summary>服务器设置（自动填充，可手动修改）</summary>
+            <div class="field-grid">
+              <label class="field">
+                <span>IMAP 服务器</span>
+                <input id="acct-imap-host" type="text" placeholder="imap.example.com" />
+              </label>
+              <label class="field">
+                <span>IMAP 端口</span>
+                <input id="acct-imap-port" type="number" value="993" />
+              </label>
+              <label class="field">
+                <span>SMTP 服务器</span>
+                <input id="acct-smtp-host" type="text" placeholder="smtp.example.com" />
+              </label>
+              <label class="field">
+                <span>SMTP 端口</span>
+                <input id="acct-smtp-port" type="number" value="465" />
+              </label>
+            </div>
+            <label class="checkbox"><input id="acct-imap-secure" type="checkbox" checked /> IMAP 使用 SSL 加密</label>
+            <label class="checkbox"><input id="acct-smtp-secure" type="checkbox" checked /> SMTP 使用 SSL 加密（587 端口请取消勾选）</label>
+          </details>
+
+          <div class="test-result" id="acct-test-result"></div>
+        </div>
+        <footer class="modal-foot">
+          <button class="ghost-btn" id="btn-test-account">测试连接</button>
+          <span class="spacer"></span>
+          <button class="ghost-btn" data-close="account-modal">取消</button>
+          <button class="primary-btn" id="btn-save-account">保存</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- 写信弹窗 -->
+    <div class="modal-backdrop" id="compose-modal" hidden>
+      <div class="modal modal-compose">
+        <header class="modal-head">
+          <h3 id="compose-title">写邮件</h3>
+          <button class="icon-btn" data-close="compose-modal">✕</button>
+        </header>
+        <div class="modal-body">
+          <div class="draft-hint" id="compose-draft-hint" hidden></div>
+          <div class="compose-notice" id="compose-notice" hidden></div>
+          <label class="field">
+            <span>发件账号</span>
+            <select id="compose-from"></select>
+          </label>
+          <label class="field">
+            <span>收件人</span>
+            <input id="compose-to" type="text" placeholder="多个地址用逗号分隔" autocomplete="off" />
+          </label>
+          <div class="compose-cc-row">
+            <button class="link-btn" id="btn-toggle-cc">添加抄送 / 密送</button>
+          </div>
+          <div id="compose-cc-fields" hidden>
+            <label class="field">
+              <span>抄送</span>
+              <input id="compose-cc" type="text" placeholder="cc@example.com" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>密送</span>
+              <input id="compose-bcc" type="text" placeholder="bcc@example.com" autocomplete="off" />
+            </label>
+          </div>
+          <label class="field">
+            <span>主题</span>
+            <input id="compose-subject" type="text" placeholder="邮件主题" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>正文</span>
+            <textarea id="compose-body" rows="12" placeholder="写点什么…"></textarea>
+          </label>
+          <div class="attachments-row">
+            <button class="ghost-btn small" id="btn-add-attachment">＋ 添加附件</button>
+            <div id="compose-attachments" class="attachment-chips"></div>
+          </div>
+          <div class="compose-drop-hint">也可以把文件直接拖进这个窗口</div>
+          <div class="compose-error" id="compose-error"></div>
+        </div>
+        <footer class="modal-foot">
+          <span class="spacer"></span>
+          <button class="ghost-btn" data-close="compose-modal">取消</button>
+          <button class="primary-btn" id="btn-send">发送</button>
+        </footer>
+      </div>
+      <div class="drop-overlay" id="compose-dropzone" hidden>
+        <div class="drop-overlay-inner">
+          <div class="drop-overlay-icon">📎</div>
+          <strong>松开即可添加附件</strong>
+          <span>支持一次拖入多个文件</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="modal-backdrop" id="settings-modal" hidden>
+      <div class="modal modal-settings">
+        <header class="modal-head">
+          <h3>设置</h3>
+          <button class="icon-btn" data-close="settings-modal">✕</button>
+        </header>
+        <div class="modal-body">
+          <section class="settings-section">
+            <h4>外观</h4>
+            <label class="field field-inline">
+              <span>主题</span>
+              <select id="settings-theme">
+                <option value="system">跟随系统</option>
+                <option value="light">浅色</option>
+                <option value="dark">深色</option>
+              </select>
+            </label>
+            <em class="field-note">深色模式下界面和邮件正文一起变暗：正文按发件人的原配色做智能映射，尽量不破坏排版。</em>
+          </section>
+
+          <section class="settings-section">
+            <h4>写信</h4>
+            <label class="field">
+              <span>邮件签名（自动追加到正文末尾）</span>
+              <textarea id="settings-signature" rows="3" placeholder="例如：\n张三\n产品部 · 138****0000"></textarea>
+            </label>
+          </section>
+
+          <section class="settings-section">
+            <h4>阅读</h4>
+            <label class="checkbox"><input id="settings-dark-mail" type="checkbox" /> 深色模式下让邮件正文也跟随变暗</label>
+            <label class="checkbox"><input id="settings-remote-images" type="checkbox" /> 默认允许加载邮件中的远程图片（会暴露你的 IP，建议保持关闭）</label>
+          </section>
+
+          <section class="settings-section">
+            <h4>后台与提醒</h4>
+            <label class="checkbox"><input id="settings-minimize-tray" type="checkbox" /> 关闭窗口时最小化到托盘，继续在后台收信</label>
+            <label class="checkbox"><input id="settings-notifications" type="checkbox" /> 新邮件到达时弹出桌面通知</label>
+            <label class="checkbox"><input id="settings-login" type="checkbox" /> 开机自动启动<em class="field-note" id="settings-login-note"></em></label>
+            <label class="field field-inline">
+              <span>后台自动同步</span>
+              <select id="settings-interval">
+                <option value="0">关闭（只手动同步）</option>
+                <option value="5">每 5 分钟</option>
+                <option value="10">每 10 分钟</option>
+                <option value="15">每 15 分钟</option>
+                <option value="30">每 30 分钟</option>
+                <option value="60">每 60 分钟</option>
+              </select>
+            </label>
+            <div class="settings-actions">
+              <button class="ghost-btn small" id="btn-test-notify">发一条测试提醒</button>
+              <span class="sync-hint" id="settings-notify-state"></span>
+            </div>
+            <div class="push-state" id="settings-push-state"></div>
+          </section>
+
+          <section class="settings-section">
+            <h4>本地存储</h4>
+            <div class="settings-actions">
+              <span class="sync-hint" id="settings-storage">正在统计…</span>
+              <button class="ghost-btn small" id="btn-clear-cache">清理邮件缓存</button>
+            </div>
+          </section>
+
+          <div class="settings-meta" id="settings-meta"></div>
+        </div>
+        <footer class="modal-foot">
+          <button class="ghost-btn" id="btn-open-data">打开数据目录</button>
+          <span class="spacer"></span>
+          <button class="ghost-btn" data-close="settings-modal">关闭</button>
+          <button class="primary-btn" id="btn-save-settings">保存</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- 通用确认弹窗 -->
+    <div class="modal-backdrop" id="confirm-modal" hidden>
+      <div class="modal modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <header class="modal-head">
+          <h3 id="confirm-title">确认操作</h3>
+          <button class="icon-btn" id="confirm-x" type="button" title="关闭">✕</button>
+        </header>
+        <div class="modal-body">
+          <p class="confirm-message" id="confirm-message"></p>
+        </div>
+        <footer class="modal-foot">
+          <span class="spacer"></span>
+          <button class="ghost-btn" id="confirm-cancel" type="button">取消</button>
+          <button class="primary-btn" id="confirm-ok" type="button">确定</button>
+        </footer>
+      </div>
+    </div>
+
+    <div id="toast-host" class="toast-host"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
