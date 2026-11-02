@@ -148,6 +148,8 @@ MAILHUB_DEMO=1 npm start
 - 邮件 HTML 在 `srcdoc` iframe 中渲染，沙箱禁用脚本，CSP 默认拦截外部图片
 - 样式令牌集中在 `renderer/styles.css` 的 `:root` / `:root[data-theme='dark']`，改主题只改这一处
 
+完整说明（模块职责、收信/发信数据流、IPC 契约、数据目录与坑）见 **[docs/HANDOFF.md](docs/HANDOFF.md)**；接手前建议先读一遍。AI agent 另见 [AGENTS.md](AGENTS.md)。
+
 ## 目录结构
 
 ```
@@ -171,7 +173,9 @@ mailhub/
 │  └─ app.js             状态管理、列表/阅读/写信/设置
 ├─ assets/               图标（icon / tray / 未读角标）
 ├─ build/                electron-builder 配置与 NSIS 脚本
+├─ docs/HANDOFF.md       交接文档：架构、数据流、IPC 契约、易踩的坑
 ├─ docs/screenshots/     README 截图
+├─ AGENTS.md             给 AI agent 的工作规则（红线 + 改动后必须跑的测试）
 └─ scripts/make-icons.mjs  纯 Node 重新生成上述 PNG 图标
 ```
 
